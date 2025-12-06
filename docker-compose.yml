@@ -1,0 +1,10 @@
+services:
+  watcher:
+    container_name: classifieds-watcher
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: tail -f /dev/null
