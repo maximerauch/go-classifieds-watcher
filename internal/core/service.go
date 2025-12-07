@@ -66,7 +66,7 @@ func (s *WatcherService) Run(ctx context.Context) error {
 		}
 
 		// 4. Save
-		if err := s.repo.SaveID(ctx, item.ID); err != nil {
+		if err := s.repo.Save(ctx, item); err != nil {
 			s.logger.Error("failed to save id", "id", item.ID, "error", err)
 		} else {
 			newCount++

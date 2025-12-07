@@ -3,14 +3,12 @@ main
 *.exe
 *.test
 
-# IDE
-.idea/
-.vscode/
-
-# Locale Storage
+# Data & Config
 data/
 *.json
-!package.json
+.env
 
-# Docker
+# IDEs
+.idea/
+.vscode/
 .DS_Store

@@ -12,6 +12,6 @@ type Notifier interface {
 }
 
 type Repository interface {
-	SaveID(ctx context.Context, id string) error
+	Save(ctx context.Context, listing Listing) error
 	Exists(ctx context.Context, id string) (bool, error)
 }

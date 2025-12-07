@@ -5,18 +5,20 @@ import (
 	"encoding/json"
 	"os"
 	"sync"
+
+	"github.com/maximerauch/go-classifieds-watcher/internal/core"
 )
 
 type JSONRepository struct {
 	filePath string
 	mu       sync.Mutex
-	seenIDs  map[string]bool
+	storage  map[string]core.Listing
 }
 
 func NewJSONRepository(filePath string) *JSONRepository {
 	repo := &JSONRepository{
 		filePath: filePath,
-		seenIDs:  make(map[string]bool),
+		storage:  make(map[string]core.Listing),
 	}
 	repo.load()
 	return repo
@@ -25,28 +27,29 @@ func NewJSONRepository(filePath string) *JSONRepository {
 func (r *JSONRepository) Exists(ctx context.Context, id string) (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.seenIDs[id], nil
+	_, exists := r.storage[id]
+	return exists, nil
 }
 
-func (r *JSONRepository) SaveID(ctx context.Context, id string) error {
+// Save stores the full listing in the map and persists to disk
+func (r *JSONRepository) Save(ctx context.Context, listing core.Listing) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.seenIDs[id] = true
+	r.storage[listing.ID] = listing
 	return r.save()
 }
 
 func (r *JSONRepository) load() {
 	file, err := os.ReadFile(r.filePath)
 	if err != nil {
-		// Si le fichier n'existe pas, on part de zéro
-		return
+		return // Start with empty map if file doesn't exist
 	}
-	_ = json.Unmarshal(file, &r.seenIDs)
+	_ = json.Unmarshal(file, &r.storage)
 }
 
 func (r *JSONRepository) save() error {
-	data, err := json.MarshalIndent(r.seenIDs, "", "  ")
+	data, err := json.MarshalIndent(r.storage, "", "  ")
 	if err != nil {
 		return err
 	}

@@ -14,11 +14,6 @@ import (
 	"github.com/maximerauch/go-classifieds-watcher/internal/core"
 )
 
-// Constants for the API logic
-const (
-	itemsPerPage = 12
-)
-
 // --- JSON DATA STRUCTURES ---
 
 type APIResponse struct {
@@ -43,14 +38,16 @@ type ListingDetail struct {
 // --- PROVIDER IMPLEMENTATION ---
 
 type Provider struct {
-	apiURL string
-	client *http.Client
+	apiURL       string
+	itemsPerPage int // Dynamic config
+	client       *http.Client
 }
 
-func NewProvider(apiURL string) *Provider {
+func NewProvider(apiURL string, itemsPerPage int) *Provider {
 	return &Provider{
-		apiURL: apiURL,
-		client: &http.Client{Timeout: 15 * time.Second},
+		apiURL:       apiURL,
+		itemsPerPage: itemsPerPage,
+		client:       &http.Client{Timeout: 15 * time.Second},
 	}
 }
 
@@ -66,12 +63,12 @@ func (p *Provider) FetchListings(ctx context.Context) ([]core.Listing, error) {
 	}
 
 	// If no items or only one page, return immediately
-	if totalCount <= itemsPerPage {
+	if totalCount <= p.itemsPerPage {
 		return firstPageListings, nil
 	}
 
 	// Step 2: Calculate total pages needed
-	totalPages := int(math.Ceil(float64(totalCount) / float64(itemsPerPage)))
+	totalPages := int(math.Ceil(float64(totalCount) / float64(p.itemsPerPage)))
 	fmt.Printf("DEBUG: Found %d total listings (%d pages). Starting parallel fetch...\n", totalCount, totalPages)
 
 	// Step 3: Fan-out - Fetch remaining pages in parallel

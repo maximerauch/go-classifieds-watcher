@@ -1,9 +1,18 @@
-# Leboncoin Alerts
+# Go Classifieds Watcher 🕵️‍♂️
 
-## Introduction
+A lightweight, concurrent real-time watcher for real estate listings, built with **Go** using **Clean Architecture**.
 
-It's a small script I used when I was looking for a new appartment. At the moment, it's only working for retrieving appartements/houses for rent. 
+## 🏗 Architecture
 
-## Automating
+- **Core:** Pure business logic.
+- **Adapters:** 
+  - `asi67`: Reverse-engineered API Client (10x faster than scraping).
+  - `fs`: JSON-based full data persistence.
+- **Config:** 12-Factor App compliant (Env vars).
 
-You can automate your alerts with a simple CRON task. Just create a bash file executing the file `main.rb` and register a CRON task which will execute your bash script.
+## 🚀 Usage
+
+1. Create a `.env` file (see source code for keys).
+2. Run with Docker:
+   ```bash
+   make run
