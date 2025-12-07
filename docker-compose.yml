@@ -1,10 +1,13 @@
 services:
   watcher:
-    container_name: classifieds-watcher
     build:
       context: .
       dockerfile: .docker/Dockerfile
+    container_name: go-classifieds-watcher
     volumes:
       - .:/app
-    working_dir: /app
-    command: tail -f /dev/null
+    environment:
+      - CGO_ENABLED=0
+      - GOOS=linux
+      - GOARCH=amd64
+    restart: "no"
