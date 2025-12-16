@@ -4,14 +4,14 @@ import "context"
 
 type Provider interface {
 	Name() string
-	FetchListings(ctx context.Context) ([]Listing, error)
+	FetchItems(ctx context.Context) ([]Item, error)
 }
 
 type Notifier interface {
-	Send(ctx context.Context, listing Listing) error
+	Send(ctx context.Context, item Item) error
 }
 
 type Repository interface {
-	Save(ctx context.Context, listing Listing) error
+	Save(ctx context.Context, item Item) error
 	Exists(ctx context.Context, id string) (bool, error)
 }

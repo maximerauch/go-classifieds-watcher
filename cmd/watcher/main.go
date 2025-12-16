@@ -8,8 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/asi67"
+	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/composite"
+	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/email"
 	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/fs"
+	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/rememberme"
 	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/std"
 	"github.com/maximerauch/go-classifieds-watcher/internal/config" // Import Config
 	"github.com/maximerauch/go-classifieds-watcher/internal/core"
@@ -31,15 +33,15 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// 1. Load Configuration
 	cfg := config.Load()
 
-	logger.Info("starting go-classifieds-watcher",
-		"mode", "one-shot-job",
-		"items_per_page", cfg.ItemsPerPage,
-	)
+	logger.Info("starting go-classifieds-watcher", "mode", "one-shot-job")
 
 	// 2. Wiring
-	repo := fs.NewJSONRepository(cfg.DataFilePath)
-	notifier := std.NewLoggerNotifier(logger)
-	provider := asi67.NewProvider(cfg.APIURL, cfg.ItemsPerPage)
+	repo := fs.NewJSONRepository(cfg.RememberMe.DataFilePath)
+	notifier := composite.NewCompositeNotifier(
+		std.NewLoggerNotifier(logger),
+		email.NewEmailNotifier(cfg.Email),
+	)
+	provider := rememberme.NewProvider(cfg.RememberMe.SearchURL)
 
 	svc := core.NewWatcherService(provider, repo, notifier, logger)
 

@@ -12,13 +12,13 @@ import (
 type JSONRepository struct {
 	filePath string
 	mu       sync.Mutex
-	storage  map[string]core.Listing
+	storage  map[string]core.Item
 }
 
 func NewJSONRepository(filePath string) *JSONRepository {
 	repo := &JSONRepository{
 		filePath: filePath,
-		storage:  make(map[string]core.Listing),
+		storage:  make(map[string]core.Item),
 	}
 	repo.load()
 	return repo
@@ -31,12 +31,12 @@ func (r *JSONRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// Save stores the full listing in the map and persists to disk
-func (r *JSONRepository) Save(ctx context.Context, listing core.Listing) error {
+// Save stores the full items in the map and persists to disk
+func (r *JSONRepository) Save(ctx context.Context, item core.Item) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.storage[listing.ID] = listing
+	r.storage[item.ID] = item
 	return r.save()
 }
 

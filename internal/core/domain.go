@@ -2,7 +2,7 @@ package core
 
 import "time"
 
-type Listing struct {
+type Item struct {
 	ID          string
 	Title       string
 	Description string
@@ -13,6 +13,6 @@ type Listing struct {
 	Metadata    map[string]interface{}
 }
 
-func (l Listing) IsValid() bool {
-	return l.ID != "" && l.Title != "" && l.Url != ""
+func (i Item) IsValid() bool {
+	return i.ID != "" && i.Title != "" && i.Url != ""
 }

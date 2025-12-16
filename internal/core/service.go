@@ -29,18 +29,18 @@ func (s *WatcherService) Run(ctx context.Context) error {
 	s.logger.Info("starting watcher run", "provider", s.provider.Name())
 
 	// 1. Fetch
-	listings, err := s.provider.FetchListings(ctx)
+	items, err := s.provider.FetchItems(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to fetch listings from %s: %w", s.provider.Name(), err)
+		return fmt.Errorf("failed to fetch items from %s: %w", s.provider.Name(), err)
 	}
 
-	s.logger.Info("listings fetched", "count", len(listings))
+	s.logger.Info("items fetched", "count", len(items))
 
 	newCount := 0
-	for _, item := range listings {
+	for _, item := range items {
 		// Defensive check
 		if !item.IsValid() {
-			s.logger.Warn("skipping invalid listing", "listing", item)
+			s.logger.Warn("skipping invalid item", "item", item)
 			continue
 		}
 
@@ -55,13 +55,13 @@ func (s *WatcherService) Run(ctx context.Context) error {
 			continue
 		}
 
-		s.logger.Info("new listing found", "id", item.ID, "title", item.Title)
+		s.logger.Info("new item found", "id", item.ID, "title", item.Title)
 
 		// 3. Notify
 		if err := s.notifier.Send(ctx, item); err != nil {
 			s.logger.Error("failed to notify", "id", item.ID, "error", err)
 			// Strategy: If notification fails, do not save the ID.
-			// We want to retry this listing on the next run (At-Least-Once delivery).
+			// We want to retry this item on the next run (At-Least-Once delivery).
 			continue
 		}
 
@@ -73,6 +73,6 @@ func (s *WatcherService) Run(ctx context.Context) error {
 		}
 	}
 
-	s.logger.Info("watcher run finished", "new_listings", newCount)
+	s.logger.Info("watcher run finished", "new_items", newCount)
 	return nil
 }

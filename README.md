@@ -34,11 +34,12 @@ To fetch paginated results efficiently, the application uses a **Fan-Out** patte
 
 ### 3. Clean Architecture (Hexagonal)
 The project is strictly structured to decouple business logic from infrastructure:
-* **Core (Domain):** Contains `Listing` entities and the `WatcherService`. Zero dependencies.
+* **Core (Domain):** Contains `Item` entities and the `WatcherService`. Zero dependencies.
 * **Ports:** Interfaces defining `Provider`, `Repository`, and `Notifier`.
 * **Adapters:**
     * `asi67`: The HTTP Client adapter (API).
     * `fs`: A JSON-based file persistence adapter.
+    * `rememberme`: The HTTP Client adapter (API).
     * `std`: Structured logging adapter (`slog`).
 
 ## 🏗 Project Structure
@@ -83,13 +84,13 @@ docker-compose up --build
 
 ### 3. Output
 The application will:
-1.  **Fetch** listings from the API in parallel.
+1.  **Fetch** items from the API in parallel.
 2.  **Filter** duplicates.
 3.  **Compare** with the local history (`data/seen.json`).
-4.  **Log** new listings to stdout.
+4.  **Log** new items to stdout.
 5.  **Exit** cleanly.
 
-To verify persistence, run the command a second time. It should report `0 new listings`.
+To verify persistence, run the command a second time. It should report `0 new items`.
 
 ### 4. Development
 To clean artifacts (binary and local database) and start fresh:

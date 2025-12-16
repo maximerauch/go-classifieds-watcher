@@ -18,12 +18,12 @@ import (
 
 type APIResponse struct {
 	Data struct {
-		ProdCount int                      `json:"prodCount"` // Total number of items
-		ProdID    map[string]ListingDetail `json:"prodId"`    // Listings map
+		ProdCount int                   `json:"prodCount"` // Total number of items
+		ProdID    map[string]ItemDetail `json:"prodId"`    // Items map
 	} `json:"data"`
 }
 
-type ListingDetail struct {
+type ItemDetail struct {
 	City         string  `json:"city"`
 	Cp           string  `json:"cp"`
 	Surface      float64 `json:"surface"`
@@ -55,28 +55,27 @@ func (p *Provider) Name() string {
 	return "asi67 (api-client-v2)"
 }
 
-func (p *Provider) FetchListings(ctx context.Context) ([]core.Listing, error) {
+func (p *Provider) FetchItems(ctx context.Context) ([]core.Item, error) {
 	// Step 1: Fetch the first page synchronously to discover the total count
-	firstPageListings, totalCount, err := p.fetchPage(ctx, 1)
+	firstPageItems, totalCount, err := p.fetchPage(ctx, 1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch page 1: %w", err)
 	}
 
 	// If no items or only one page, return immediately
 	if totalCount <= p.itemsPerPage {
-		return firstPageListings, nil
+		return firstPageItems, nil
 	}
 
 	// Step 2: Calculate total pages needed
 	totalPages := int(math.Ceil(float64(totalCount) / float64(p.itemsPerPage)))
-	fmt.Printf("DEBUG: Found %d total listings (%d pages). Starting parallel fetch...\n", totalCount, totalPages)
+	fmt.Printf("DEBUG: Found %d total items (%d pages). Starting parallel fetch...\n", totalCount, totalPages)
 
 	// Step 3: Fan-out - Fetch remaining pages in parallel
 	var (
-		wg          sync.WaitGroup
-		mu          sync.Mutex
-		allListings = firstPageListings // Start with page 1 results
-		errOccurred error
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		allItems = firstPageItems // Start with page 1 results
 	)
 
 	// Loop from page 2 to totalPages
@@ -90,33 +89,29 @@ func (p *Provider) FetchListings(ctx context.Context) ([]core.Listing, error) {
 				return
 			}
 
-			listings, _, err := p.fetchPage(ctx, pNum)
+			items, _, err := p.fetchPage(ctx, pNum)
 			if err != nil {
-				// We log the error but don't stop the whole process (best effort)
+				// We log the error but don't stop the whole process (the best effort)
 				fmt.Printf("⚠️ Error fetching page %d: %v\n", pNum, err)
 				return
 			}
 
 			// Thread-safe append
 			mu.Lock()
-			allListings = append(allListings, listings...)
+			allItems = append(allItems, items...)
 			mu.Unlock()
 		}(page)
 	}
 
 	wg.Wait()
 
-	if nil != errOccurred {
-		return nil, errOccurred
-	}
-
-	fmt.Printf("DEBUG: Successfully fetched %d listings from %d pages.\n", len(allListings), totalPages)
-	return allListings, nil
+	fmt.Printf("DEBUG: Successfully fetched %d items from %d pages.\n", len(allItems), totalPages)
+	return allItems, nil
 }
 
 // fetchPage handles the API call for a specific page number.
-// It returns the listings, the total count (from metadata), and an error.
-func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Listing, int, error) {
+// It returns the items, the total count (from metadata), and an error.
+func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Item, int, error) {
 	// 1. Prepare Request Payload with the specific page number
 	requestBody := map[string]interface{}{
 		"params": map[string]interface{}{
@@ -153,7 +148,12 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Listing, 
 	if err != nil {
 		return nil, 0, fmt.Errorf("http call error: %w", err)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			fmt.Printf("⚠️ Error closing response body: %v\n", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, 0, fmt.Errorf("api status %d", resp.StatusCode)
@@ -166,7 +166,7 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Listing, 
 	}
 
 	// 5. Map to Domain
-	var listings []core.Listing
+	var items []core.Item
 	for id, detail := range apiResp.Data.ProdID {
 		fullURL := fmt.Sprintf("https://www.asi67.com/location/location,%s", id)
 
@@ -180,7 +180,7 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Listing, 
 			price = detail.PricePrimary
 		}
 
-		listings = append(listings, core.Listing{
+		items = append(items, core.Item{
 			ID:          id,
 			Title:       title,
 			Url:         fullURL,
@@ -191,5 +191,5 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Listing, 
 		})
 	}
 
-	return listings, apiResp.Data.ProdCount, nil
+	return items, apiResp.Data.ProdCount, nil
 }

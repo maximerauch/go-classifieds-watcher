@@ -16,11 +16,11 @@ func NewLoggerNotifier(l *slog.Logger) *LoggerNotifier {
 	return &LoggerNotifier{logger: l}
 }
 
-func (n *LoggerNotifier) Send(ctx context.Context, listing core.Listing) error {
+func (n *LoggerNotifier) Send(ctx context.Context, item core.Item) error {
 	n.logger.Info("NOTIFICATION SENT",
-		"title", listing.Title,
-		"price", listing.Price,
-		"url", listing.Url,
+		"title", item.Title,
+		"price", item.Price,
+		"url", item.Url,
 	)
 	return nil
 }
