@@ -10,7 +10,7 @@ import (
 
 	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/composite"
 	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/email"
-	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/fs"
+	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/postgres"
 	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/rememberme"
 	"github.com/maximerauch/go-classifieds-watcher/internal/adapters/std"
 	"github.com/maximerauch/go-classifieds-watcher/internal/config" // Import Config
@@ -36,7 +36,11 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	logger.Info("starting go-classifieds-watcher", "mode", "one-shot-job")
 
 	// 2. Wiring
-	repo := fs.NewJSONRepository(cfg.RememberMe.DataFilePath)
+	repo, err := postgres.NewRepository(cfg.Database.DSN)
+	if err != nil {
+		return err
+	}
+
 	notifier := composite.NewCompositeNotifier(
 		std.NewLoggerNotifier(logger),
 		email.NewEmailNotifier(cfg.Email),

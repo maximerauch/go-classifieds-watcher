@@ -10,6 +10,7 @@ type AppConfig struct {
 	Asi67      Asi67Config
 	RememberMe RememberMeConfig
 	Email      EmailConfig
+	Database   DatabaseConfig
 }
 
 type Asi67Config struct {
@@ -30,6 +31,10 @@ type EmailConfig struct {
 	SMTPPassword string
 	From         string
 	To           []string
+}
+
+type DatabaseConfig struct {
+	DSN string
 }
 
 // Load fetches configuration from env vars or sets defaults
@@ -53,6 +58,10 @@ func Load() AppConfig {
 			SMTPPassword: getEnv("SMTP_PASSWORD", "your-password"),
 			From:         getEnv("EMAIL_FROM", "Watcher Bot <your.mail@gmail.com>"),
 			To:           strings.Split(getEnv("EMAIL_TO", "your.mail@gmail.com"), ","),
+		},
+
+		Database: DatabaseConfig{
+			DSN: getEnv("DATABASE_URL", ""),
 		},
 	}
 }
