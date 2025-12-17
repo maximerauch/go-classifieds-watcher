@@ -1,46 +1,47 @@
 # 🕵️‍♂️ Go Classifieds Watcher
 
-![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=for-the-badge&logo=go)
+![Go Version](https://img.shields.io/badge/Go-1.25-00ADD8?style=for-the-badge&logo=go)
 ![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-orange?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-> **From a dusty single-threaded script to a high-performance concurrent system.**
+> **From a dusty single-threaded script to a high-performance, cloud-native concurrent system.**
 
 ## 📖 The Story
 
-This project is the spiritual successor to an old legacy automation script. The goal was not just to bring it back to life, but to use it as a **playground to demonstrate modern Go capabilities** regarding concurrency, architecture, and performance optimization.
+This project is the spiritual successor to an old legacy automation script. The goal was not just to bring it back to life, but to use it as a **playground to demonstrate modern Go capabilities** regarding concurrency, architecture, and reliability.
 
-What started as a heavy browser automation task (Headless Chrome) was refactored into a **lightweight, reverse-engineered API client**, drastically reducing resource consumption and execution time.
+What started as a heavy browser automation task was refactored into a **lightweight, intelligent agent** capable of handling both JSON APIs and HTML scraping with industrial-grade reliability, designed to run continuously as a cloud daemon.
 
 ## ⚡ Key Technical Highlights
 
-### 1. From "Brute Force" to "Smart Engineering"
-Initial versions used `chromedp` to render JavaScript and scrape the DOM. While functional, it was resource-heavy.
-**The Pivot:** By reverse-engineering the target's private API, I transitioned to a pure HTTP implementation.
+### 1. Hybrid Data Fetching Strategies
+The system adapts to the source target using distinct strategies, all behind a unified Port:
+* **Reverse-Engineered API (ASI67):** Bypasses the UI to hit private JSON endpoints directly (~30x faster than Headless Chrome).
+* **Polite HTML Scraping (RememberMe):** Uses `goquery` to parse DOM efficiently.
+  * *Feature:* Implements **Rate Limiting** via a weighted semaphore pattern to respect the target server's load and avoid IP bans.
 
-| Metric | Headless Chrome Strategy | Reverse-Engineered API Strategy | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Execution Time** | ~45s | **~1.5s** | **30x Faster** |
-| **Memory Usage** | ~600MB | **~15MB** | **40x Lighter** |
-| **Docker Image** | ~500MB | **~20MB** | **Alpine Native** |
-
-### 2. Concurrency Pattern (Fan-Out / Fan-In)
-To fetch paginated results efficiently, the application uses a **Fan-Out** pattern:
-1.  **Discovery:** Fetches Page 1 synchronously to determine total item count.
-2.  **Fan-Out:** Spawns Goroutines to fetch all remaining pages (2..N) in parallel.
-3.  **Fan-In:** Uses a `Mutex` protected slice to aggregate results safely.
-4.  **Resilience:** Uses a `sync.WaitGroup` to ensure all routines complete before processing.
+### 2. Advanced Concurrency Patterns
+To fetch data efficiently without overwhelming resources:
+* **Fan-Out/Fan-In:** Spawns Goroutines to fetch pages in parallel.
+* **Semaphore Pattern:** Limits concurrent HTTP requests (e.g., max 5 active workers) during scraping.
+* **Mutex Synchronization:** Aggregates results safely into shared slices.
 
 ### 3. Clean Architecture (Hexagonal)
-The project is strictly structured to decouple business logic from infrastructure:
-* **Core (Domain):** Contains `Item` entities and the `WatcherService`. Zero dependencies.
+The project is strictly structured to decouple business logic from infrastructure.
+* **Core (Domain):** Pure business logic. Zero external dependencies.
 * **Ports:** Interfaces defining `Provider`, `Repository`, and `Notifier`.
 * **Adapters:**
-    * `asi67`: The HTTP Client adapter (API).
-    * `fs`: A JSON-based file persistence adapter.
-    * `rememberme`: The HTTP Client adapter (API).
-    * `std`: Structured logging adapter (`slog`).
+  * `postgres`: SQL persistence using `lib/pq`, optimized for PaaS (Heroku/Scalingo) with SSL support.
+  * `fs`: Fallback JSON file persistence for local development.
+  * `email`: SMTP adapter using `gomail` for rich HTML alerts.
+  * `composite`: **Composite Pattern** implementation to broadcast notifications to multiple channels (Logs + Email) simultaneously.
+
+### 4. Cloud-Native & Daemon Mode
+Unlike simple scripts, this application is designed to run as a long-living **Daemon**:
+* **Ticker Loop:** Executes scans on a defined schedule (e.g., every 10m).
+* **Graceful Shutdown:** Handles `SIGTERM` signals to finish current jobs before exiting.
+* **Stateless:** Uses PostgreSQL to persist state, allowing the application to be deployed on ephemeral file systems.
 
 ## 🏗 Project Structure
 
@@ -52,10 +53,14 @@ The project is strictly structured to decouple business logic from infrastructur
 │   ├── core/          # PURE BUSINESS LOGIC (Ports & Domain)
 │   ├── config/        # 12-Factor App Configuration
 │   └── adapters/      # INFRASTRUCTURE LAYERS
-│       ├── asi67/     # API Client (HTTP, JSON Unmarshal)
-│       ├── fs/        # File System Persistence
-│       └── std/       # Logging wrapper
+│       ├── asi67/     # API Client (HTTP JSON)
+│       ├── rememberme/# HTML Scraper (goquery + Rate Limiting)
+│       ├── postgres/  # SQL Repository (lib/pq)
+│       ├── email/     # SMTP Client
+│       ├── composite/ # Composite Pattern for Notifiers
+│       └── std/       # Structured Logging (slog)
 ├── .docker/           # Docker build context
+└── Procfile           # PaaS Deployment Config (Worker definition)
 └── data/              # Local persistence volume (GitIgnored)
 ```
 
@@ -72,33 +77,19 @@ cp .env.example .env
 ### 2. Running with Docker
 This approach requires no local Go installation. It runs the application as a one-off job inside a lightweight Alpine container.
 
-**Using Make (Standard):**
 ```bash
-make run
+docker-compose up --build -d
 ```
 
-**Using Docker Compose manually:**
-```bash
-docker-compose up --build
-```
-
-### 3. Output
-The application will:
-1.  **Fetch** items from the API in parallel.
-2.  **Filter** duplicates.
-3.  **Compare** with the local history (`data/seen.json`).
-4.  **Log** new items to stdout.
-5.  **Exit** cleanly.
-
-To verify persistence, run the command a second time. It should report `0 new items`.
-
-### 4. Development
-To clean artifacts (binary and local database) and start fresh:
-```bash
-make clean
-```
+### 3. PaaS Deployment (Scalingo / Heroku)
+The project includes a Procfile for seamless cloud deployment.
+1. Provision a PostgreSQL addon on your PaaS.
+2. Set the environment variables. 
+3. **Important:** Scale the worker process to 1 and web to 0 (as this is a background daemon).
 
 ## 🔮 Future Roadmap
 
-* [ ] **Notification Adapter:** Replace Logger with Discord/Slack Webhooks.
+* [x] PostgreSQL Support: Enable stateless cloud deployment.
+* [x] Email Notifications: Rich HTML alerts.
+* [x] Daemon Mode: Continuous monitoring with Graceful Shutdown.
 * [ ] **Metrics:** Add Prometheus adapter for monitoring execution duration.
