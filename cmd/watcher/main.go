@@ -47,7 +47,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return err
 	}
 
-	// Setup Notifiers: We combine Logger (stdout) and Email
+	// Setup Notifiers: Combine Logger (stdout) and Email
 	notifier := composite.NewCompositeNotifier(
 		std.NewLoggerNotifier(logger),
 		email.NewEmailNotifier(cfg.Email),

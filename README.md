@@ -4,6 +4,7 @@
 ![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-orange?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![CI Status](https://img.shields.io/github/actions/workflow/status/maximerauch/go-classifieds-watcher/unit-tests.yml?branch=master&label=Tests&logo=github&style=for-the-badge)
 
 > **From a dusty single-threaded script to a high-performance, cloud-native concurrent system.**
 
