@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 
 	_ "github.com/lib/pq"
 	"github.com/maximerauch/go-classifieds-watcher/internal/core"
@@ -15,7 +16,19 @@ type Repository struct {
 }
 
 func NewRepository(databaseURL string) (*Repository, error) {
-	db, err := sql.Open("postgres", databaseURL)
+	// 1. Parse URl to clean incompatible parameters
+	u, err := url.Parse(databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid database url: %w", err)
+	}
+
+	// 2. Hack Scalingo/Heroku : lib/pq don't support "prefer"
+	// We force "require" because we installed ca-certificates in Dockerfile.
+	q := u.Query()
+	q.Set("sslmode", "require")
+	u.RawQuery = q.Encode()
+
+	db, err := sql.Open("postgres", u.String())
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to db: %w", err)
 	}
