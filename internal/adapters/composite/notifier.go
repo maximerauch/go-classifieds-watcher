@@ -8,12 +8,10 @@ import (
 	"github.com/maximerauch/go-classifieds-watcher/internal/core"
 )
 
-// CompositeNotifier aggregates multiple notifiers into one.
 type CompositeNotifier struct {
 	notifiers []core.Notifier
 }
 
-// NewCompositeNotifier creates a composite notifier.
 func NewCompositeNotifier(notifiers ...core.Notifier) *CompositeNotifier {
 	return &CompositeNotifier{
 		notifiers: notifiers,

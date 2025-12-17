@@ -14,8 +14,6 @@ import (
 	"github.com/maximerauch/go-classifieds-watcher/internal/core"
 )
 
-// --- JSON DATA STRUCTURES ---
-
 type APIResponse struct {
 	Data struct {
 		ProdCount int                   `json:"prodCount"` // Total number of items
@@ -34,8 +32,6 @@ type ItemDetail struct {
 		Fr string `json:"fr"`
 	} `json:"title"`
 }
-
-// --- PROVIDER IMPLEMENTATION ---
 
 type Provider struct {
 	apiURL       string
@@ -112,7 +108,7 @@ func (p *Provider) FetchItems(ctx context.Context) ([]core.Item, error) {
 // fetchPage handles the API call for a specific page number.
 // It returns the items, the total count (from metadata), and an error.
 func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Item, int, error) {
-	// 1. Prepare Request Payload with the specific page number
+	// Prepare Request Payload with the specific page number
 	requestBody := map[string]interface{}{
 		"params": map[string]interface{}{
 			"type_offer": "2",
@@ -133,7 +129,7 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Item, int
 		return nil, 0, fmt.Errorf("json marshal error: %w", err)
 	}
 
-	// 2. Create HTTP Request
+	// Create HTTP Request
 	req, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return nil, 0, fmt.Errorf("create request error: %w", err)
@@ -143,7 +139,7 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Item, int
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ClassifiedsWatcher/1.0)")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
-	// 3. Execute
+	// Execute
 	resp, err := p.client.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("http call error: %w", err)
@@ -159,13 +155,13 @@ func (p *Provider) fetchPage(ctx context.Context, pageNum int) ([]core.Item, int
 		return nil, 0, fmt.Errorf("api status %d", resp.StatusCode)
 	}
 
-	// 4. Decode
+	// Decode
 	var apiResp APIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, 0, fmt.Errorf("json decode error: %w", err)
 	}
 
-	// 5. Map to Domain
+	// Map to Domain
 	var items []core.Item
 	for id, detail := range apiResp.Data.ProdID {
 		fullURL := fmt.Sprintf("https://www.asi67.com/location/location,%s", id)

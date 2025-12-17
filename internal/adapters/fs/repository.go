@@ -31,7 +31,6 @@ func (r *JSONRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// Save stores the full items in the map and persists to disk
 func (r *JSONRepository) Save(ctx context.Context, item core.Item) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

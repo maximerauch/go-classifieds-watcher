@@ -19,7 +19,6 @@ func NewEmailNotifier(cfg config.EmailConfig) *EmailNotifier {
 	return &EmailNotifier{cfg: cfg}
 }
 
-// Send sends a single email for a specific item.
 func (n *EmailNotifier) Send(ctx context.Context, item core.Item) error {
 	// Respect context cancellation
 	if ctx.Err() != nil {

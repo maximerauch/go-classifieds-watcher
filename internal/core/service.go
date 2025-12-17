@@ -44,7 +44,7 @@ func (s *WatcherService) Run(ctx context.Context) error {
 			continue
 		}
 
-		// 2. Check Dedup (Idempotency)
+		// Check Dedup (Idempotency)
 		exists, err := s.repo.Exists(ctx, item.ID)
 		if err != nil {
 			s.logger.Error("failed to check existence", "id", item.ID, "error", err)
@@ -57,7 +57,7 @@ func (s *WatcherService) Run(ctx context.Context) error {
 
 		s.logger.Info("new item found", "id", item.ID, "title", item.Title)
 
-		// 3. Notify
+		// Notify
 		if err := s.notifier.Send(ctx, item); err != nil {
 			s.logger.Error("failed to notify", "id", item.ID, "error", err)
 			// Strategy: If notification fails, do not save the ID.
@@ -65,7 +65,7 @@ func (s *WatcherService) Run(ctx context.Context) error {
 			continue
 		}
 
-		// 4. Save
+		// Save
 		if err := s.repo.Save(ctx, item); err != nil {
 			s.logger.Error("failed to save id", "id", item.ID, "error", err)
 		} else {

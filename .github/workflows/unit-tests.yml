@@ -24,5 +24,13 @@ jobs:
       - name: Build
         run: go build -v ./cmd/watcher/...
 
-      - name: Run Tests
-        run: go test -v ./...
+      - name: Run Tests with Coverage
+        run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Update coverage report
+        uses: ncruces/go-coverage-report@v0
+        with:
+          report: true
+          chart: true
+          amend: true
+        continue-on-error: true

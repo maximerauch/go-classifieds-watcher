@@ -7,7 +7,6 @@ import (
 	"github.com/maximerauch/go-classifieds-watcher/internal/core"
 )
 
-// LoggerNotifier implements core.Notifier by logging details to stdout.
 type LoggerNotifier struct {
 	logger *slog.Logger
 }

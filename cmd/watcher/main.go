@@ -29,17 +29,16 @@ func main() {
 		logger.Error("fatal application error", "error", err)
 		os.Exit(1)
 	}
+
 	os.Exit(0)
 }
 
 func run(ctx context.Context, logger *slog.Logger) error {
-	// 1. Load Configuration
+	// Load Configuration
 	cfg := config.Load()
 
 	// Switched mode to "daemon-worker" to reflect the long-running nature
 	logger.Info("starting go-classifieds-watcher", "mode", "daemon-worker")
-
-	// 2. Wiring & Dependencies Initialization
 
 	// Initialize PostgreSQL repository
 	repo, err := postgres.NewRepository(cfg.Database.DSN)
@@ -58,8 +57,6 @@ func run(ctx context.Context, logger *slog.Logger) error {
 
 	// Initialize the Domain Service
 	svc := core.NewWatcherService(provider, repo, notifier, logger)
-
-	// 3. Execution Loop (Daemon Mode)
 
 	// Step A: Immediate execution on startup (Fail-safe check)
 	logger.Info("executing initial scan")

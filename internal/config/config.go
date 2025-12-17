@@ -37,7 +37,6 @@ type DatabaseConfig struct {
 	DSN string
 }
 
-// Load fetches configuration from env vars or sets defaults
 func Load() AppConfig {
 	return AppConfig{
 		Asi67: Asi67Config{
@@ -66,7 +65,6 @@ func Load() AppConfig {
 	}
 }
 
-// Helper to get env string with default
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
@@ -74,7 +72,6 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// Helper to get env int with default
 func getEnvAsInt(key string, fallback int) int {
 	valueStr := getEnv(key, "")
 	if value, err := strconv.Atoi(valueStr); err == nil {

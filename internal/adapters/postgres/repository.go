@@ -16,14 +16,13 @@ type Repository struct {
 }
 
 func NewRepository(databaseURL string) (*Repository, error) {
-	// 1. Parse URl to clean incompatible parameters
+	// Parse URl to clean incompatible parameters
 	u, err := url.Parse(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid database url: %w", err)
 	}
 
-	// 2. Hack Scalingo/Heroku : lib/pq don't support "prefer"
-	// We force "require" because we installed ca-certificates in Dockerfile.
+	// Hack Scalingo/Heroku : we force "require" because we installed ca-certificates in Dockerfile.
 	q := u.Query()
 	q.Set("sslmode", "require")
 	u.RawQuery = q.Encode()
@@ -49,7 +48,6 @@ func NewRepository(databaseURL string) (*Repository, error) {
 	return &Repository{db: db}, nil
 }
 
-// Exists checks if an ID is already in the database
 func (r *Repository) Exists(ctx context.Context, id string) (bool, error) {
 	var exists int
 	query := "SELECT 1 FROM seen_items WHERE id = $1"
@@ -64,7 +62,6 @@ func (r *Repository) Exists(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
-// Save inserts a new ID into the database
 func (r *Repository) Save(ctx context.Context, item core.Item) error {
 	query := "INSERT INTO seen_items (id) VALUES ($1) ON CONFLICT (id) DO NOTHING"
 	_, err := r.db.ExecContext(ctx, query, item.ID)

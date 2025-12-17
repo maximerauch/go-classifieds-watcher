@@ -20,8 +20,6 @@ type Provider struct {
 	searchURL string
 }
 
-// NewProvider creates a new instance of the Remember Me provider.
-// searchURL: The full URL with filters (e.g., "https://remembermefrance.org/pets/?breed=0...")
 func NewProvider(searchURL string) *Provider {
 	return &Provider{
 		client: &http.Client{
@@ -37,14 +35,13 @@ func (p *Provider) Name() string {
 }
 
 func (p *Provider) FetchItems(ctx context.Context) ([]core.Item, error) {
-	// 1. Fetch Page 1 to discover total pages and initial items
+	// Fetch Page 1 to discover total pages and initial items
 	doc, err := p.fetchDocument(ctx, p.searchURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch first page: %w", err)
 	}
 
-	// 2. Detect max page number from WordPress pagination
-	// Looking for <a class="page-numbers"> links
+	// Detect max page number from pagination
 	maxPage := 1
 	doc.Find("a.page-numbers").Each(func(i int, s *goquery.Selection) {
 		txt := strings.TrimSpace(s.Text())
@@ -57,14 +54,14 @@ func (p *Provider) FetchItems(ctx context.Context) ([]core.Item, error) {
 
 	fmt.Printf("DEBUG: Found max page: %d\n", maxPage)
 
-	// 3. Extract items from page 1
+	// Extract items from page 1
 	allItems := p.extractItems(doc)
 
 	if maxPage <= 1 {
 		return allItems, nil
 	}
 
-	// 4. Fan-Out: Scrape remaining pages in parallel
+	// Fan-Out: Scrape remaining pages in parallel
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
@@ -116,9 +113,7 @@ func (p *Provider) FetchItems(ctx context.Context) ([]core.Item, error) {
 	return allItems, nil
 }
 
-// --- HELPERS ---
-
-// buildPageURL injects "/page/N/" into the URL path for WordPress pagination.
+// buildPageURL injects "/page/N/" into the URL path for pagination.
 // Input: https://site.org/pets/?filter=1 -> Output: https://site.org/pets/page/2/?filter=1
 func (p *Provider) buildPageURL(originalURL string, pageNum int) (string, error) {
 	u, err := url.Parse(originalURL)
@@ -172,33 +167,31 @@ func (p *Provider) extractItems(doc *goquery.Document) []core.Item {
 	// CSS SELECTOR: We target <article> tags with class "pets"
 	doc.Find("article.pets").Each(func(i int, s *goquery.Selection) {
 
-		// 1. ID: Get the ID from the <article id="pet-XXXX"> attribute
+		// ID: Get the ID from the <article id="pet-XXXX"> attribute
 		id, _ := s.Attr("id")
 
-		// 2. Title: Inside <h3 class="pet-title">
+		// Title: Inside <h3 class="pet-title">
 		title := strings.TrimSpace(s.Find(".pet-title").Text())
 
-		// 3. URL: Inside <header class="pet-header"> -> <a>
+		// URL: Inside <header class="pet-header"> -> <a>
 		link, exists := s.Find(".pet-header a").First().Attr("href")
 		if !exists {
 			return
 		}
 
-		// 4. Description: Inside <section class="pet-content">
-		// We clean up newlines and extra spaces
+		// Description: Inside <section class="pet-content">
 		rawDesc := s.Find(".pet-content").Text()
 		description := strings.TrimSpace(strings.ReplaceAll(rawDesc, "\n", " "))
 
-		// Basic validation
 		if id != "" && title != "" {
 			items = append(items, core.Item{
 				ID:          id,
 				Title:       title,
 				Url:         link,
-				Price:       0, // Adoption usually has no displayed price in list view
+				Price:       0,
 				Currency:    "EUR",
 				PublishedAt: time.Now(),
-				Description: description, // Contains "Male, born in...", "Location..."
+				Description: description,
 			})
 		}
 	})
