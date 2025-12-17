@@ -1,7 +1,0 @@
-{
-  "jobs": [
-    {
-      "command": "0 */1 * * * /bin/watcher"
-    }
-  ]
-}
