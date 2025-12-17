@@ -10,6 +10,30 @@ services:
       - CGO_ENABLED=0
       - GOOS=linux
       - GOARCH=amd64
+      - DATABASE_URL=postgres://postgres-user:postgres-password@go-classifieds-watcher-db:5432/watcher_db?sslmode=disable
     env_file:
       - .env
     restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: go-classifieds-watcher-db
+    environment:
+      POSTGRES_USER: postgres-user
+      POSTGRES_PASSWORD: postgres-password
+      POSTGRES_DB: watcher_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d watcher_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
